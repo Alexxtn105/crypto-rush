@@ -12,6 +12,33 @@ import (
 	"go.uber.org/zap"
 )
 
+// CORS middleware
+func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+
+		// В разработке разрешаем все origin, в продакшене нужно указать конкретные
+		if origin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+		} else {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+		}
+
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.Header().Set("Access-Control-Max-Age", "3600")
+
+		// Handle preflight requests
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next(w, r)
+	}
+}
+
 func main() {
 	// Загрузка конфига
 	cfg, err := config.Load("config.yml")
@@ -44,10 +71,10 @@ func main() {
 	// Роутинг
 	mux := http.NewServeMux()
 
-	// API endpoints
-	mux.HandleFunc("/api/game/start", h.GetGameData)
-	mux.HandleFunc("/api/game/submit", h.SubmitScore)
-	mux.HandleFunc("/api/leaderboard", h.GetLeaderboard)
+	// API endpoints с CORS middleware
+	mux.HandleFunc("/api/game/start", corsMiddleware(h.GetGameData))
+	mux.HandleFunc("/api/game/submit", corsMiddleware(h.SubmitScore))
+	mux.HandleFunc("/api/leaderboard", corsMiddleware(h.GetLeaderboard))
 
 	// Статические файлы - ищем папку web относительно текущей директории
 	// Сначала попробуем найти config.yml, чтобы определить корень проекта
@@ -83,7 +110,12 @@ func main() {
 		})
 	} else {
 		logger.Info("Serving static files from", zap.String("path", webDir))
-		mux.Handle("/", http.FileServer(http.Dir(webDir)))
+
+		// Оборачиваем file server в CORS middleware
+		staticHandler := corsMiddleware(func(w http.ResponseWriter, r *http.Request) {
+			http.FileServer(http.Dir(webDir)).ServeHTTP(w, r)
+		})
+		mux.HandleFunc("/", staticHandler)
 	}
 
 	addr := cfg.Server.Host + ":" + cfg.Server.Port

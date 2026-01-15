@@ -28,6 +28,34 @@ func New(db *database.Database, engine *game.Engine, cfg *config.Config, logger 
 	}
 }
 
+func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Разрешаем запросы с любого origin (в продакшене замените на конкретные домены)
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
+		// Разрешаем методы
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+
+		// Разрешаем заголовки
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// Разрешаем куки
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+
+		// Разрешаем кэширование предварительных запросов на 1 час
+		w.Header().Set("Access-Control-Max-Age", "3600")
+
+		// Обработка предварительных запросов OPTIONS
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		// Передаем управление следующему обработчику
+		next(w, r)
+	}
+}
+
 func (h *Handler) GetGameData(w http.ResponseWriter, r *http.Request) {
 	duration := h.config.Game.RoundDuration
 
