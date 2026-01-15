@@ -9,6 +9,8 @@ class CryptoRushGame {
         this.trades = 0;
         this.currentPrices = {};
         this.priceIndex = 0;
+        this.intervals = []; // Для хранения всех интервалов
+        this.maxChartPoints = 60; // Максимум точек на графике
     }
 
     async init() {
@@ -19,14 +21,20 @@ class CryptoRushGame {
     }
 
     async loadGameData() {
-        const response = await fetch('/api/game/start');
-        this.gameData = await response.json();
-        this.balance = this.gameData.startBalance;
+        try {
+            const response = await fetch('/api/game/start');
+            if (!response.ok) throw new Error('Network response was not ok');
+            this.gameData = await response.json();
+            this.balance = this.gameData.startBalance;
 
-        // Инициализация текущих цен
-        this.gameData.assets.forEach(asset => {
-            this.currentPrices[asset.symbol] = asset.prices[0].price;
-        });
+            // Инициализация текущих цен
+            this.gameData.assets.forEach(asset => {
+                this.currentPrices[asset.symbol] = asset.prices[0].price;
+            });
+        } catch (error) {
+            console.error('Failed to load game data:', error);
+            alert('Failed to load game data. Please refresh the page.');
+        }
     }
 
     setupUI() {
@@ -52,22 +60,51 @@ class CryptoRushGame {
                         borderColor: '#667eea',
                         backgroundColor: 'rgba(102, 126, 234, 0.1)',
                         tension: 0.4,
-                        fill: true
+                        fill: true,
+                        borderWidth: 2,
+                        pointRadius: 0, // Убираем точки для производительности
+                        pointHoverRadius: 3
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    animation: {
+                        duration: 0 // Отключаем анимацию для производительности
+                    },
                     plugins: {
-                        legend: { display: false }
+                        legend: { display: false },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
                     },
                     scales: {
+                        x: {
+                            display: true,
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                maxTicksLimit: 10
+                            }
+                        },
                         y: {
-                            beginAtZero: false
+                            beginAtZero: false,
+                            grid: {
+                                color: 'rgba(0,0,0,0.05)'
+                            }
                         }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'nearest'
                     }
                 }
             });
+
+            // Инициализируем график начальными данными
+            this.updateChartData(asset.symbol, asset.prices[0].price, 0);
         });
 
         // Создание карточек активов
@@ -91,60 +128,80 @@ class CryptoRushGame {
 
     startGame() {
         this.isRunning = true;
-        this.updateTimer();
-        this.updatePrices();
+
+        // Запускаем таймер
+        const timerInterval = setInterval(() => this.updateTimer(), 1000);
+        this.intervals.push(timerInterval);
+
+        // Запускаем обновление цен
+        const priceInterval = setInterval(() => this.updatePrices(), 1000);
+        this.intervals.push(priceInterval);
 
         // Генерация событий
-        setInterval(() => this.generateEvent(), 25000);
+        const eventInterval = setInterval(() => this.generateEvent(), 25000);
+        this.intervals.push(eventInterval);
     }
 
     updateTimer() {
-        const timerInterval = setInterval(() => {
-            if (this.timeLeft <= 0) {
-                clearInterval(timerInterval);
-                this.endGame();
-                return;
-            }
+        if (this.timeLeft <= 0) {
+            this.endGame();
+            return;
+        }
 
-            this.timeLeft--;
-            const minutes = Math.floor(this.timeLeft / 60);
-            const seconds = this.timeLeft % 60;
-            document.getElementById('timer').textContent =
-                `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        }, 1000);
+        this.timeLeft--;
+        const minutes = Math.floor(this.timeLeft / 60);
+        const seconds = this.timeLeft % 60;
+        document.getElementById('timer').textContent =
+            `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
 
     updatePrices() {
-        const priceInterval = setInterval(() => {
-            if (!this.isRunning || this.priceIndex >= this.gameData.duration) {
-                clearInterval(priceInterval);
-                return;
+        if (!this.isRunning || this.priceIndex >= this.gameData.duration) {
+            return;
+        }
+
+        this.gameData.assets.forEach(asset => {
+            const price = asset.prices[this.priceIndex]?.price;
+            if (price === undefined) return;
+
+            this.currentPrices[asset.symbol] = price;
+
+            // Обновление UI цены
+            const priceElement = document.getElementById(`price-${asset.symbol}`);
+            priceElement.textContent = `$${price.toFixed(2)}`;
+
+            // Добавляем CSS класс для анимации изменения цены
+            priceElement.classList.remove('price-up', 'price-down');
+            const prevPrice = this.charts[asset.symbol]?.data?.datasets[0]?.data?.slice(-1)[0] || price;
+            if (price > prevPrice) {
+                priceElement.classList.add('price-up');
+            } else if (price < prevPrice) {
+                priceElement.classList.add('price-down');
             }
 
-            this.gameData.assets.forEach(asset => {
-                const price = asset.prices[this.priceIndex].price;
-                this.currentPrices[asset.symbol] = price;
+            // Обновление графика
+            this.updateChartData(asset.symbol, price, this.priceIndex);
+        });
 
-                // Обновление UI
-                const priceElement = document.getElementById(`price-${asset.symbol}`);
-                priceElement.textContent = `$${price.toFixed(2)}`;
+        this.priceIndex++;
+        this.updatePortfolio();
+    }
 
-                // Обновление графика
-                const chart = this.charts[asset.symbol];
-                chart.data.labels.push(this.priceIndex);
-                chart.data.datasets[0].data.push(price);
+    updateChartData(symbol, price, index) {
+        const chart = this.charts[symbol];
+        if (!chart) return;
 
-                if (chart.data.labels.length > 60) {
-                    chart.data.labels.shift();
-                    chart.data.datasets[0].data.shift();
-                }
+        chart.data.labels.push(index);
+        chart.data.datasets[0].data.push(price);
 
-                chart.update('none');
-            });
+        // Ограничиваем количество точек на графике
+        if (chart.data.labels.length > this.maxChartPoints) {
+            chart.data.labels.shift();
+            chart.data.datasets[0].data.shift();
+        }
 
-            this.priceIndex++;
-            this.updatePortfolio();
-        }, 1000);
+        // Обновляем график только если виден
+        chart.update('none');
     }
 
     buy(symbol) {
@@ -184,7 +241,8 @@ class CryptoRushGame {
 
         Object.entries(this.portfolio).forEach(([symbol, amount]) => {
             if (amount > 0) {
-                const value = amount * this.currentPrices[symbol];
+                const price = this.currentPrices[symbol] || 0;
+                const value = amount * price;
                 totalValue += value;
 
                 const item = document.createElement('div');
@@ -196,9 +254,11 @@ class CryptoRushGame {
                 portfolioList.appendChild(item);
 
                 // Активация кнопки продажи
-                document.querySelector(`button[onclick="game.sell('${symbol}')"]`).disabled = false;
+                const sellBtn = document.querySelector(`button[onclick="game.sell('${symbol}')"]`);
+                if (sellBtn) sellBtn.disabled = false;
             } else {
-                document.querySelector(`button[onclick="game.sell('${symbol}')"]`).disabled = true;
+                const sellBtn = document.querySelector(`button[onclick="game.sell('${symbol}')"]`);
+                if (sellBtn) sellBtn.disabled = true;
             }
         });
 
@@ -236,10 +296,14 @@ class CryptoRushGame {
     endGame() {
         this.isRunning = false;
 
+        // Очищаем все интервалы
+        this.intervals.forEach(interval => clearInterval(interval));
+        this.intervals = [];
+
         // Продажа всех активов
         let finalBalance = this.balance;
         Object.entries(this.portfolio).forEach(([symbol, amount]) => {
-            finalBalance += amount * this.currentPrices[symbol];
+            finalBalance += amount * (this.currentPrices[symbol] || 0);
         });
 
         const profit = finalBalance - this.gameData.startBalance;
@@ -255,7 +319,37 @@ class CryptoRushGame {
 
         // Сохранение результата
         document.getElementById('submit-score-btn').onclick = () => this.submitScore(finalBalance);
-        document.getElementById('play-again-btn').onclick = () => location.reload();
+        document.getElementById('play-again-btn').onclick = () => this.restartGame();
+    }
+
+    restartGame() {
+        // Полная очистка перед перезапуском
+        this.intervals.forEach(interval => clearInterval(interval));
+        this.intervals = [];
+
+        // Уничтожаем графики
+        Object.values(this.charts).forEach(chart => chart.destroy());
+        this.charts = {};
+
+        // Сбрасываем состояние
+        this.gameData = null;
+        this.balance = 10000;
+        this.portfolio = {};
+        this.timeLeft = 180;
+        this.isRunning = false;
+        this.trades = 0;
+        this.currentPrices = {};
+        this.priceIndex = 0;
+
+        // Очищаем UI
+        document.getElementById('charts-container').innerHTML = '';
+        document.getElementById('assets-container').innerHTML = '';
+        document.getElementById('portfolio-list').innerHTML = '';
+        document.getElementById('events-feed').innerHTML = '';
+        document.getElementById('result-modal').classList.add('hidden');
+
+        // Перезапускаем игру
+        this.init();
     }
 
     async submitScore(finalBalance) {
@@ -265,48 +359,80 @@ class CryptoRushGame {
             return;
         }
 
-        const result = {
-            username: username,
-            final_balance: finalBalance,
-            trades_count: this.trades
-        };
+        try {
+            const result = {
+                username: username,
+                final_balance: finalBalance,
+                trades_count: this.trades
+            };
 
-        const response = await fetch('/api/game/submit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(result)
-        });
+            const response = await fetch('/api/game/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(result)
+            });
 
-        if (response.ok) {
+            if (!response.ok) throw new Error('Failed to submit score');
+
             alert('Score submitted!');
             this.loadLeaderboard();
             document.getElementById('submit-score-btn').disabled = true;
+        } catch (error) {
+            console.error('Failed to submit score:', error);
+            alert('Failed to submit score. Please try again.');
         }
     }
 
     async loadLeaderboard() {
-        const response = await fetch('/api/leaderboard?limit=10');
-        const scores = await response.json();
+        try {
+            const response = await fetch('/api/leaderboard?limit=10');
+            if (!response.ok) throw new Error('Network response was not ok');
+            const scores = await response.json();
 
-        const leaderboardList = document.getElementById('leaderboard-list');
-        leaderboardList.innerHTML = '';
+            const leaderboardList = document.getElementById('leaderboard-list');
+            leaderboardList.innerHTML = '';
 
-        scores.forEach((score, index) => {
-            const item = document.createElement('div');
-            item.className = 'leaderboard-item';
-            item.innerHTML = `
-                <span class="rank">#${index + 1}</span>
-                <span>${score.username}</span>
-                <span>${score.score.toFixed(1)} pts</span>
-            `;
-            leaderboardList.appendChild(item);
-        });
+            scores.forEach((score, index) => {
+                const item = document.createElement('div');
+                item.className = 'leaderboard-item';
+                item.innerHTML = `
+                    <span class="rank">#${index + 1}</span>
+                    <span>${score.username}</span>
+                    <span>${score.score?.toFixed(1) || '0'} pts</span>
+                `;
+                leaderboardList.appendChild(item);
+            });
+        } catch (error) {
+            console.error('Failed to load leaderboard:', error);
+        }
+    }
+
+    // Метод для очистки ресурсов
+    cleanup() {
+        this.intervals.forEach(interval => clearInterval(interval));
+        this.intervals = [];
+        Object.values(this.charts).forEach(chart => chart.destroy());
     }
 }
 
-// Инициализация игры
+// Инициализация игры с обработкой ошибок
 let game;
-window.addEventListener('DOMContentLoaded', () => {
-    game = new CryptoRushGame();
-    game.init();
+
+function initializeGame() {
+    try {
+        game = new CryptoRushGame();
+        game.init();
+    } catch (error) {
+        console.error('Failed to initialize game:', error);
+        alert('Failed to initialize game. Please refresh the page.');
+    }
+}
+
+// Очистка при закрытии страницы
+window.addEventListener('beforeunload', () => {
+    if (game) {
+        game.cleanup();
+    }
 });
+
+window.addEventListener('DOMContentLoaded', initializeGame);
