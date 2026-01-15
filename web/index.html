@@ -15,13 +15,28 @@
     </header>
 
     <div class="game-layout">
-        <!-- Левая панель: графики -->
-        <div class="charts-panel">
-            <div id="charts-container"></div>
+        <!-- Первый столбец: графики котировок -->
+        <div class="charts-column">
+            <div class="column-header">
+                <h3>📈 Live Charts</h3>
+            </div>
+            <div id="charts-container" class="charts-container"></div>
         </div>
 
-        <!-- Правая панель: торговля -->
-        <div class="trading-panel">
+        <!-- Второй столбец: лента новостей -->
+        <div class="news-column">
+            <div class="column-header">
+                <h3>📰 News Feed</h3>
+            </div>
+            <div id="events-feed" class="events-feed"></div>
+        </div>
+
+        <!-- Третий столбец: торговля -->
+        <div class="trading-column">
+            <div class="column-header">
+                <h3>💼 Trading Desk</h3>
+            </div>
+
             <div class="balance-card">
                 <h3>Balance</h3>
                 <div id="balance" class="balance">$10,000</div>
@@ -31,13 +46,18 @@
 
             <div class="portfolio">
                 <h3>Portfolio</h3>
-                <div id="portfolio-list"></div>
+                <div id="portfolio-list" class="portfolio-list"></div>
             </div>
         </div>
     </div>
 
-    <!-- События -->
-    <div id="events-feed" class="events-feed"></div>
+    <!-- Строка снизу: таблица лидеров -->
+    <div class="leaderboard-row">
+        <div class="leaderboard">
+            <h2>🏆 Leaderboard</h2>
+            <div id="leaderboard-list" class="leaderboard-list"></div>
+        </div>
+    </div>
 
     <!-- Модальное окно результатов -->
     <div id="result-modal" class="modal hidden">
@@ -48,12 +68,6 @@
             <button id="submit-score-btn" class="btn btn-primary">Submit Score</button>
             <button id="play-again-btn" class="btn">Play Again</button>
         </div>
-    </div>
-
-    <!-- Таблица лидеров -->
-    <div class="leaderboard">
-        <h2>🏆 Leaderboard</h2>
-        <div id="leaderboard-list"></div>
     </div>
 </div>
 

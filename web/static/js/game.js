@@ -37,16 +37,105 @@ class CryptoRushGame {
         }
     }
 
+    // setupUI() {
+    //     // Создание графиков
+    //     const chartsContainer = document.getElementById('charts-container');
+    //     this.gameData.assets.forEach(asset => {
+    //         const chartDiv = document.createElement('div');
+    //         chartDiv.className = 'chart-container';
+    //         chartDiv.innerHTML = `
+    //             <h3>${asset.name} (${asset.symbol})</h3>
+    //             <canvas id="chart-${asset.symbol}"></canvas>
+    //         `;
+    //         chartsContainer.appendChild(chartDiv);
+    //
+    //         const ctx = document.getElementById(`chart-${asset.symbol}`).getContext('2d');
+    //         this.charts[asset.symbol] = new Chart(ctx, {
+    //             type: 'line',
+    //             data: {
+    //                 labels: [],
+    //                 datasets: [{
+    //                     label: 'Price',
+    //                     data: [],
+    //                     borderColor: '#667eea',
+    //                     backgroundColor: 'rgba(102, 126, 234, 0.1)',
+    //                     tension: 0.4,
+    //                     fill: true,
+    //                     borderWidth: 2,
+    //                     pointRadius: 0, // Убираем точки для производительности
+    //                     pointHoverRadius: 3
+    //                 }]
+    //             },
+    //             options: {
+    //                 responsive: true,
+    //                 maintainAspectRatio: false,
+    //                 animation: {
+    //                     duration: 0 // Отключаем анимацию для производительности
+    //                 },
+    //                 plugins: {
+    //                     legend: { display: false },
+    //                     tooltip: {
+    //                         mode: 'index',
+    //                         intersect: false
+    //                     }
+    //                 },
+    //                 scales: {
+    //                     x: {
+    //                         display: true,
+    //                         grid: {
+    //                             display: false
+    //                         },
+    //                         ticks: {
+    //                             maxTicksLimit: 10
+    //                         }
+    //                     },
+    //                     y: {
+    //                         beginAtZero: false,
+    //                         grid: {
+    //                             color: 'rgba(0,0,0,0.05)'
+    //                         }
+    //                     }
+    //                 },
+    //                 interaction: {
+    //                     intersect: false,
+    //                     mode: 'nearest'
+    //                 }
+    //             }
+    //         });
+    //
+    //         // Инициализируем график начальными данными
+    //         this.updateChartData(asset.symbol, asset.prices[0].price, 0);
+    //     });
+    //
+    //     // Создание карточек активов
+    //     const assetsContainer = document.getElementById('assets-container');
+    //     this.gameData.assets.forEach(asset => {
+    //         const assetCard = document.createElement('div');
+    //         assetCard.className = 'asset-card';
+    //         assetCard.innerHTML = `
+    //             <div class="asset-header">
+    //                 <span class="asset-name">${asset.symbol}</span>
+    //                 <span class="asset-price" id="price-${asset.symbol}">$${asset.prices[0].price.toFixed(2)}</span>
+    //             </div>
+    //             <div class="asset-actions">
+    //                 <button class="btn btn-buy" onclick="game.buy('${asset.symbol}')">Buy</button>
+    //                 <button class="btn btn-sell" onclick="game.sell('${asset.symbol}')" disabled>Sell</button>
+    //             </div>
+    //         `;
+    //         assetsContainer.appendChild(assetCard);
+    //     });
+    // }
+
     setupUI() {
-        // Создание графиков
+        // Создание графиков (остается без изменений)
         const chartsContainer = document.getElementById('charts-container');
         this.gameData.assets.forEach(asset => {
             const chartDiv = document.createElement('div');
             chartDiv.className = 'chart-container';
             chartDiv.innerHTML = `
-                <h3>${asset.name} (${asset.symbol})</h3>
-                <canvas id="chart-${asset.symbol}"></canvas>
-            `;
+            <h3>${asset.name} (${asset.symbol})</h3>
+            <canvas id="chart-${asset.symbol}"></canvas>
+        `;
             chartsContainer.appendChild(chartDiv);
 
             const ctx = document.getElementById(`chart-${asset.symbol}`).getContext('2d');
@@ -62,16 +151,14 @@ class CryptoRushGame {
                         tension: 0.4,
                         fill: true,
                         borderWidth: 2,
-                        pointRadius: 0, // Убираем точки для производительности
+                        pointRadius: 0,
                         pointHoverRadius: 3
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    animation: {
-                        duration: 0 // Отключаем анимацию для производительности
-                    },
+                    animation: { duration: 0 },
                     plugins: {
                         legend: { display: false },
                         tooltip: {
@@ -82,18 +169,12 @@ class CryptoRushGame {
                     scales: {
                         x: {
                             display: true,
-                            grid: {
-                                display: false
-                            },
-                            ticks: {
-                                maxTicksLimit: 10
-                            }
+                            grid: { display: false },
+                            ticks: { maxTicksLimit: 10 }
                         },
                         y: {
                             beginAtZero: false,
-                            grid: {
-                                color: 'rgba(0,0,0,0.05)'
-                            }
+                            grid: { color: 'rgba(0,0,0,0.05)' }
                         }
                     },
                     interaction: {
@@ -103,25 +184,24 @@ class CryptoRushGame {
                 }
             });
 
-            // Инициализируем график начальными данными
             this.updateChartData(asset.symbol, asset.prices[0].price, 0);
         });
 
-        // Создание карточек активов
+        // Создание карточек активов - теперь в контейнере assets-container
         const assetsContainer = document.getElementById('assets-container');
         this.gameData.assets.forEach(asset => {
             const assetCard = document.createElement('div');
             assetCard.className = 'asset-card';
             assetCard.innerHTML = `
-                <div class="asset-header">
-                    <span class="asset-name">${asset.symbol}</span>
-                    <span class="asset-price" id="price-${asset.symbol}">$${asset.prices[0].price.toFixed(2)}</span>
-                </div>
-                <div class="asset-actions">
-                    <button class="btn btn-buy" onclick="game.buy('${asset.symbol}')">Buy</button>
-                    <button class="btn btn-sell" onclick="game.sell('${asset.symbol}')" disabled>Sell</button>
-                </div>
-            `;
+            <div class="asset-header">
+                <span class="asset-name">${asset.symbol}</span>
+                <span class="asset-price" id="price-${asset.symbol}">$${asset.prices[0].price.toFixed(2)}</span>
+            </div>
+            <div class="asset-actions">
+                <button class="btn btn-buy" onclick="game.buy('${asset.symbol}')">Buy</button>
+                <button class="btn btn-sell" onclick="game.sell('${asset.symbol}')" disabled>Sell</button>
+            </div>
+        `;
             assetsContainer.appendChild(assetCard);
         });
     }
@@ -293,6 +373,35 @@ class CryptoRushGame {
         }
     }
 
+    // endGame() {
+    //     this.isRunning = false;
+    //
+    //     // Очищаем все интервалы
+    //     this.intervals.forEach(interval => clearInterval(interval));
+    //     this.intervals = [];
+    //
+    //     // Продажа всех активов
+    //     let finalBalance = this.balance;
+    //     Object.entries(this.portfolio).forEach(([symbol, amount]) => {
+    //         finalBalance += amount * (this.currentPrices[symbol] || 0);
+    //     });
+    //
+    //     const profit = finalBalance - this.gameData.startBalance;
+    //     const profitPercent = ((profit / this.gameData.startBalance) * 100).toFixed(2);
+    //
+    //     document.getElementById('result-stats').innerHTML = `
+    //         <p><strong>Final Balance:</strong> $${finalBalance.toFixed(2)}</p>
+    //         <p><strong>Profit:</strong> $${profit.toFixed(2)} (${profitPercent}%)</p>
+    //         <p><strong>Trades:</strong> ${this.trades}</p>
+    //     `;
+    //
+    //     document.getElementById('result-modal').classList.remove('hidden');
+    //
+    //     // Сохранение результата
+    //     document.getElementById('submit-score-btn').onclick = () => this.submitScore(finalBalance);
+    //     document.getElementById('play-again-btn').onclick = () => this.restartGame();
+    // }
+
     endGame() {
         this.isRunning = false;
 
@@ -310,18 +419,56 @@ class CryptoRushGame {
         const profitPercent = ((profit / this.gameData.startBalance) * 100).toFixed(2);
 
         document.getElementById('result-stats').innerHTML = `
-            <p><strong>Final Balance:</strong> $${finalBalance.toFixed(2)}</p>
-            <p><strong>Profit:</strong> $${profit.toFixed(2)} (${profitPercent}%)</p>
-            <p><strong>Trades:</strong> ${this.trades}</p>
-        `;
+        <p><strong>Final Balance:</strong> $${finalBalance.toFixed(2)}</p>
+        <p><strong>Profit:</strong> $${profit.toFixed(2)} (${profitPercent}%)</p>
+        <p><strong>Trades:</strong> ${this.trades}</p>
+    `;
 
         document.getElementById('result-modal').classList.remove('hidden');
 
-        // Сохранение результата
-        document.getElementById('submit-score-btn').onclick = () => this.submitScore(finalBalance);
-        document.getElementById('play-again-btn').onclick = () => this.restartGame();
+        // Сохранение результата - создаем новый обработчик
+        const submitBtn = document.getElementById('submit-score-btn');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.onclick = () => this.submitScore(finalBalance);
+        }
+
+        // Play Again - создаем новый обработчик
+        const playAgainBtn = document.getElementById('play-again-btn');
+        if (playAgainBtn) {
+            playAgainBtn.onclick = () => this.restartGame();
+        }
     }
 
+    // restartGame() {
+    //     // Полная очистка перед перезапуском
+    //     this.intervals.forEach(interval => clearInterval(interval));
+    //     this.intervals = [];
+    //
+    //     // Уничтожаем графики
+    //     Object.values(this.charts).forEach(chart => chart.destroy());
+    //     this.charts = {};
+    //
+    //     // Сбрасываем состояние
+    //     this.gameData = null;
+    //     this.balance = 10000;
+    //     this.portfolio = {};
+    //     this.timeLeft = 180;
+    //     this.isRunning = false;
+    //     this.trades = 0;
+    //     this.currentPrices = {};
+    //     this.priceIndex = 0;
+    //
+    //     // Очищаем UI
+    //     document.getElementById('charts-container').innerHTML = '';
+    //     document.getElementById('assets-container').innerHTML = '';
+    //     document.getElementById('portfolio-list').innerHTML = '';
+    //     document.getElementById('events-feed').innerHTML = '';
+    //     document.getElementById('result-modal').classList.add('hidden');
+    //
+    //     // Перезапускаем игру
+    //     this.init();
+    // }
     restartGame() {
         // Полная очистка перед перезапуском
         this.intervals.forEach(interval => clearInterval(interval));
@@ -348,11 +495,68 @@ class CryptoRushGame {
         document.getElementById('events-feed').innerHTML = '';
         document.getElementById('result-modal').classList.add('hidden');
 
+        // // Сбрасываем кнопку Submit Score
+        // const submitBtn = document.getElementById('submit-score-btn');
+        // if (submitBtn) {
+        //     submitBtn.disabled = false;
+        //     submitBtn.onclick = null; // Удаляем старый обработчик
+        // }
+        // Сбрасываем кнопку Submit Score
+        const submitBtn = document.getElementById('submit-score-btn');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Score'; // <-- Добавить эту строку
+            submitBtn.onclick = null;
+        }
+
+        // Сбрасываем поле ввода имени
+        const usernameInput = document.getElementById('username-input');
+        if (usernameInput) {
+            usernameInput.value = '';
+        }
+
+        // Сбрасываем таймер
+        document.getElementById('timer').textContent = '3:00';
+
         // Перезапускаем игру
         this.init();
     }
 
+    // async submitScore(finalBalance) {
+    //     const username = document.getElementById('username-input').value.trim();
+    //     if (!username) {
+    //         alert('Please enter your name');
+    //         return;
+    //     }
+    //
+    //     try {
+    //         const result = {
+    //             username: username,
+    //             final_balance: finalBalance,
+    //             trades_count: this.trades
+    //         };
+    //
+    //         const response = await fetch('/api/game/submit', {
+    //             method: 'POST',
+    //             headers: { 'Content-Type': 'application/json' },
+    //             body: JSON.stringify(result)
+    //         });
+    //
+    //         if (!response.ok) throw new Error('Failed to submit score');
+    //
+    //         alert('Score submitted!');
+    //         this.loadLeaderboard();
+    //         document.getElementById('submit-score-btn').disabled = true;
+    //     } catch (error) {
+    //         console.error('Failed to submit score:', error);
+    //         alert('Failed to submit score. Please try again.');
+    //     }
+    // }
+
     async submitScore(finalBalance) {
+        const submitBtn = document.getElementById('submit-score-btn');
+        if (submitBtn.disabled) return;
+
         const username = document.getElementById('username-input').value.trim();
         if (!username) {
             alert('Please enter your name');
@@ -360,6 +564,10 @@ class CryptoRushGame {
         }
 
         try {
+            // Отключаем кнопку на время отправки
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
             const result = {
                 username: username,
                 final_balance: finalBalance,
@@ -376,10 +584,17 @@ class CryptoRushGame {
 
             alert('Score submitted!');
             this.loadLeaderboard();
-            document.getElementById('submit-score-btn').disabled = true;
+
+            // Не отключаем кнопку полностью, но меняем текст
+            submitBtn.textContent = 'Submitted ✓';
+
         } catch (error) {
             console.error('Failed to submit score:', error);
             alert('Failed to submit score. Please try again.');
+
+            // Восстанавливаем кнопку при ошибке
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Score';
         }
     }
 
