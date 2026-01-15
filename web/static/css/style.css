@@ -541,3 +541,37 @@ h1 {
         min-height: auto;
     }
 }
+
+.chart-legend {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    font-size: 0.8em;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.legend-buy {
+    background-color: #10b981;
+}
+
+.legend-sell {
+    background-color: #ef4444;
+}
+
+.legend-price {
+    background-color: #667eea;
+}
+
+
+
