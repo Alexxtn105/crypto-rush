@@ -1,0 +1,25 @@
+server:
+  port: 8089
+  host: "0.0.0.0"
+
+database:
+  path: "./data.db"
+
+game:
+  round_duration: 180
+  start_balance: 10000
+  assets:
+    - name: "Bitcoin"
+      symbol: "BTC"
+      start_price: 50000
+      volatility: 0.03
+    - name: "Ethereum"
+      symbol: "ETH"
+      start_price: 3000
+      volatility: 0.04
+    - name: "Dogecoin"
+      symbol: "DOGE"
+      start_price: 0.15
+      volatility: 0.06
+
+log_level: "info"
